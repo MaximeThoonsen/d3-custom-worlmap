@@ -19,6 +19,19 @@ var group = svg.append("g")
     .attr("width", width)
     .attr("height", height)
 
+var countriesValues, mostVisited;
+// We get the values we use to color our map
+d3.json("data/dataTheodoTravels.json", function(error, data) {
+    countriesValues = data;
+    mostVisited = 0;
+    for (var country in countriesValues) {
+        current = parseInt(countriesValues[country])
+        if (mostVisited < current) {
+            mostVisited = current;
+        }
+    }
+});
+
 // We have modified the original continent-geogame-110m.json file to make zooms easier, so some countries won't show up with all their parts
 // like French Guiana for France.
 d3.json("data/continent-geogame-110m-countrieszoom.json", function(error, world) {
@@ -33,7 +46,6 @@ d3.json("data/continent-geogame-110m-countrieszoom.json", function(error, world)
 
     var continents = [asia,africa,europe,na,sa];
     var worldScaleFactor, worldmapBBox, worldmapBBoxOffsetX, worldmapBBoxOffsetY;
-    // There are 3 levels of zoom: "world, continent and country"
 
     var worldDefaultTransformation = undefined;
 
@@ -65,8 +77,13 @@ d3.json("data/continent-geogame-110m-countrieszoom.json", function(error, world)
         }).selectAll(".country").data(function(d) {
             return d.features;
         }).enter().insert("path").attr("class", "country")
-        .attr("fill", "#a01010")
-        .attr("d", path).attr("id", function(d) {
+        .attr("fill", function(d) {
+            var value = Math.round(remainder * countriesValues[d.properties.name]/mostVisited);
+            var red = 69;
+            var green = 69;
+            var blue = baseValue + value;
+            return "rgb(" + red + ", " + green + ", " + blue + ")";
+        }).attr("d", path).attr("id", function(d) {
             return d.id;
         });
     });
