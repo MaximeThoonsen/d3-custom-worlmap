@@ -62,17 +62,34 @@ d3.json("data/continent-geogame-110m-countrieszoom.json", function(error, world)
     group.selectAll(".continent").data(continents).enter().call(function() {
         return this.append("g").attr('class', function(d) {
             return 'continent ' + d.name.replace(' ', '');
-        })
-        .selectAll(".country").data(function(d) {
+        }).selectAll(".country").data(function(d) {
             return d.features;
-        })
-        .enter().insert("path").attr("class", "country")
+        }).enter().insert("path").attr("class", "country")
         .attr("fill", "#a01010")
         .attr("d", path).attr("id", function(d) {
             return d.id;
         });
     });
 
+    // We here draw some attributes of continents, here we simply display the name
+    var continent, continentBBox, i, len;
+    for (i = 0, len = continents.length; i < len; i++) {
+        continent = continents[i];
+        continentBBox = null;
+        group.selectAll(".continent").filter(function(d) {
+            if (d.name === continent.name) {
+                continentBBox = this.getBBox();
+                return d;
+            }
+        }).append("text").attr("class", "continent-name").text(function(d) {
+            return d.name;
+        }).attr("transform", function() {
+            var textOffsetX, textOffsetY;
+            textOffsetX = continentBBox.x + continentBBox.width / 2;
+            textOffsetY = continentBBox.y + continentBBox.height / 2;
+            return "translate(" + textOffsetX + "," + textOffsetY + ")";
+        });
+    }
     // We scale the map to fit the #map-container div
     fitWorld();
 });
