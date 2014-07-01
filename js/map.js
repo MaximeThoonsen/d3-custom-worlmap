@@ -14,6 +14,11 @@ var svg = d3.select("#map-container").append("svg")
     .attr("height", "100%")
     .attr("class","worldmap");
 
+// We add a group where we'll put our continents and countries in
+var group = svg.append("g")
+    .attr("width", width)
+    .attr("height", height)
+
 // We have modified the original continent-geogame-110m.json file to make zooms easier, so some countries won't show up with all their parts
 // like French Guiana for France.
 d3.json("data/continent-geogame-110m-countrieszoom.json", function(error, world) {
@@ -27,17 +32,47 @@ d3.json("data/continent-geogame-110m-countrieszoom.json", function(error, world)
     var sa = {type: "FeatureCollection", name: "South America", id:5, features: countries.features.filter(function(d) { return d.properties.continent == "South America"; })};
 
     var continents = [asia,africa,europe,na,sa];
+    var worldScaleFactor, worldmapBBox, worldmapBBoxOffsetX, worldmapBBoxOffsetY;
+    // There are 3 levels of zoom: "world, continent and country"
+
+    var worldDefaultTransformation = undefined;
+
+    fitWorld = function() {
+        if (worldDefaultTransformation == undefined) {
+            group.attr("transform", function() {
+                worldmapBBox = this.getBBox();
+                worldScaleFactor = Math.min(height/worldmapBBox.height, width/worldmapBBox.width);
+                worldmapBBoxOffsetX = 0.5 * width - worldScaleFactor * (worldmapBBox.x + 0.5 * worldmapBBox.width);
+                worldmapBBoxOffsetY = 0.5 * height - worldScaleFactor * (worldmapBBox.y + 0.5 * worldmapBBox.height);
+                worldDefaultTransformation = "translate(" + worldmapBBoxOffsetX + "," + worldmapBBoxOffsetY + ") scale(" + worldScaleFactor + ")";
+                return worldDefaultTransformation;
+            });
+        } else {
+            group.transition().attr("transform", worldDefaultTransformation);
+        }
+
+    };
+
+    baseValue = 69;
+    remainder = 255 - baseValue;
+
+    //!!!!!
     // We draw the continents here
-    svg.selectAll(".continent").data(continents).enter().call(function() {
-        return this.append("g")
-            .selectAll(".country")
-                .data(function(d) {
-                    return d.features;
-                })
-                .enter().insert("path").attr("class", "country")
-                .attr("fill", "#a01010")
-                .attr("d", path).attr("id", function(d) {
-                    return d.id;
-                });
+    //!!!!!
+    group.selectAll(".continent").data(continents).enter().call(function() {
+        return this.append("g").attr('class', function(d) {
+            return 'continent ' + d.name.replace(' ', '');
+        })
+        .selectAll(".country").data(function(d) {
+            return d.features;
+        })
+        .enter().insert("path").attr("class", "country")
+        .attr("fill", "#a01010")
+        .attr("d", path).attr("id", function(d) {
+            return d.id;
+        });
     });
+
+    // We scale the map to fit the #map-container div
+    fitWorld();
 });
